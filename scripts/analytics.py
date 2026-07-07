@@ -61,7 +61,7 @@ async def process(reprocess_all: bool = False):
                 """
                 SELECT rtt_ms FROM telemetry
                 WHERE session_id = $1
-                  AND event_type IN ('mot_click', 'semantic_response', 'rotation_attempt')
+                  AND event_type IN ('mot_click', 'semantic_response', 'rotation_attempt', 'speed_response')
                   AND rtt_ms IS NOT NULL AND rtt_ms > 0
                 """,
                 session_id,

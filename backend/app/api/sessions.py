@@ -34,6 +34,7 @@ class SessionEndResponse(BaseModel):
     session_id: str
     points_earned: int
     total_points: int
+    breakdown: dict
 
 
 @router.post("/session/start", response_model=SessionStartResponse)
@@ -79,17 +80,19 @@ async def end_session(
     if session.ended_at:
         raise HTTPException(status_code=409, detail="Sesión ya cerrada")
 
-    points = await compute_session_score(db, session.id)
+    difficulty_end = max(1, min(5, req.difficulty_end))
+    breakdown = await compute_session_score(db, session.id, difficulty_end)
     session.ended_at = datetime.now(timezone.utc)
-    session.final_score = points
-    session.difficulty_end = max(1, min(5, req.difficulty_end))
+    session.final_score = breakdown["points"]
+    session.difficulty_end = difficulty_end
     await db.commit()
 
-    rating = await save_rating(db, user.id, session.id, points)
+    rating = await save_rating(db, user.id, session.id, breakdown["points"])
     return SessionEndResponse(
         session_id=session.id,
         points_earned=rating.points_earned,
         total_points=rating.total_points,
+        breakdown=breakdown,
     )
 
 

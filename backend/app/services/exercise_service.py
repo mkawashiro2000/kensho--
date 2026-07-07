@@ -1,10 +1,12 @@
+import random
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models import Session, Rating
 
-EXERCISE_TYPES = ["mot_dual", "spatial_rotation"]
+EXERCISE_TYPES = ["mot_dual", "spatial_rotation", "processing_speed"]
 
 
 async def pick_next_exercise(db: AsyncSession, user_id: str) -> str:
@@ -17,29 +19,26 @@ async def pick_next_exercise(db: AsyncSession, user_id: str) -> str:
         select(Session.exercise_type)
         .where(Session.user_id == user_id)
         .order_by(Session.started_at.desc())
-        .limit(settings.max_same_type_streak)
+        .limit(10)
     )
     recent = [r[0] for r in result.all()]
 
     if not recent:
-        return EXERCISE_TYPES[0]
+        return random.choice(EXERCISE_TYPES)
 
     last = recent[0]
-    streak = 0
-    for t in recent:
-        if t == last:
-            streak += 1
-        else:
-            break
+    # Candidatos: todos menos el último (variedad garantizada)
+    candidates = [t for t in EXERCISE_TYPES if t != last]
 
-    if streak >= settings.max_same_type_streak:
-        # Cambio obligatorio
-        others = [t for t in EXERCISE_TYPES if t != last]
-        return others[0]
+    # Preferir el tipo jugado hace más tiempo (o nunca jugado)
+    def last_seen_index(t: str) -> int:
+        try:
+            return recent.index(t)
+        except ValueError:
+            return len(recent) + 1  # nunca jugado → máxima prioridad
 
-    # Alternar por defecto
-    others = [t for t in EXERCISE_TYPES if t != last]
-    return others[0] if others else last
+    candidates.sort(key=last_seen_index, reverse=True)
+    return candidates[0]
 
 
 async def initial_difficulty(db: AsyncSession, user_id: str, exercise_type: str) -> int:

@@ -16,7 +16,7 @@ router = APIRouter()
 
 redis_client = aioredis.from_url(settings.redis_url, decode_responses=True)
 
-RESPONSE_EVENTS = {"mot_click", "semantic_response", "rotation_attempt"}
+RESPONSE_EVENTS = {"mot_click", "semantic_response", "rotation_attempt", "speed_response"}
 
 
 @router.websocket("/ws/telemetry/{session_id}")
