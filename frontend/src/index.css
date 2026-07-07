@@ -1,0 +1,138 @@
+/* KENSHO — modo oscuro absoluto, CSS puro */
+:root {
+  --bg: #0a0a0f;
+  --bg-panel: #14141c;
+  --bg-elevated: #1e1e2a;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text-dim: #8888a0;
+  --accent: #4f9cff;
+  --success: #3ddc84;
+  --error: #ff5c5c;
+  --warning: #ffb340;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+/* Cronómetros y números: monoespaciada */
+.mono {
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+button.secondary {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text);
+  font-size: 15px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.error-msg { color: var(--error); font-size: 14px; margin-bottom: 12px; }
+
+/* Juego */
+.game-canvas {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.hud .score { color: var(--success); font-size: 18px; font-weight: 700; }
+.hud .difficulty { color: var(--warning); }
+.hud .timer { color: var(--accent); font-size: 18px; }
+
+.fatigue-banner {
+  background: rgba(255, 179, 64, 0.15);
+  border: 1px solid var(--warning);
+  color: var(--warning);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Rankings */
+.ranking-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.ranking-row:last-child { border-bottom: none; }
+.ranking-row .pos { color: var(--text-dim); width: 32px; }
+.ranking-row .pts { color: var(--success); font-weight: 600; }
+
+.center { text-align: center; }
+.mt { margin-top: 16px; }
