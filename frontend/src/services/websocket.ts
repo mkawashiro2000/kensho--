@@ -25,15 +25,23 @@ export class TelemetrySocket {
   }
 
   private connect() {
-    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const host = import.meta.env.VITE_API_URL
-      ? new URL(import.meta.env.VITE_API_URL).host
-      : window.location.host
     const token = getToken() || ''
-    this.ws = new WebSocket(`${proto}://${host}/ws/telemetry/${this.sessionId}?token=${token}`)
+    // En desarrollo: conectar directamente a localhost:8000
+    // En producción: usar el mismo host que sirvió la página
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const host = isDev ? 'localhost:8000' : window.location.host
+    const url = `${proto}://${host}/ws/telemetry/${this.sessionId}?token=${token}`
+    console.log('[WebSocket] Conectando a:', url)
+    this.ws = new WebSocket(url)
 
     this.ws.onopen = () => {
+      console.log('[WebSocket] Conectado')
       this.retryDelay = 1000
+    }
+
+    this.ws.onerror = (err) => {
+      console.error('[WebSocket] Error:', err)
     }
 
     this.ws.onmessage = (e) => {
@@ -55,7 +63,10 @@ export class TelemetrySocket {
 
   send(event: Record<string, unknown>) {
     if (this.ws?.readyState === WebSocket.OPEN) {
+      console.log('[WebSocket] Enviando:', event)
       this.ws.send(JSON.stringify(event))
+    } else {
+      console.warn('[WebSocket] No conectado, evento perdido:', event, 'Estado:', this.ws?.readyState)
     }
   }
 
