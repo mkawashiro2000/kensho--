@@ -6,7 +6,7 @@ import MOTGame from '../components/MOTGame'
 import SpatialGame from '../components/SpatialGame'
 import SpeedGame from '../components/SpeedGame'
 
-const SESSION_DURATION_S = 5 * 60 // 1 sesión = 1 ejercicio de 5 min
+const SESSION_DURATION_S = 2 * 60 // 1 sesión = 1 ejercicio de 2 min
 
 const EXERCISE_NAMES: Record<string, string> = {
   mot_dual: 'Seguimiento + Paridad',
@@ -30,7 +30,7 @@ export default function GamePage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [exerciseType, setExerciseType] = useState<string>('')
   const [difficulty, setDifficulty] = useState(1)
-  const [score, setScore] = useState(0)
+  const [hits, setHits] = useState(0)
   const [combo, setCombo] = useState(0)
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION_S)
   const [fatigueAlert, setFatigueAlert] = useState(false)
@@ -112,14 +112,11 @@ export default function GamePage() {
   function sendEvent(event: Record<string, unknown>) {
     socketRef.current?.send(event)
     if (event.correct === true) {
+      setHits((h) => h + 1)
       const newCombo = comboRef.current + 1
       comboRef.current = newCombo
       setCombo(newCombo)
-      // Estimación local (el servidor calcula el score real al cierre)
-      const comboMult = 1 + 0.1 * Math.min(newCombo, 10)
-      const pts = Math.round(10 * (1 + 0.3 * (difficultyRef.current - 1)) * comboMult)
-      setScore((s) => s + pts)
-      addPopup(`+${pts}`, 'var(--success)')
+      addPopup('✓', 'var(--success)')
       if (newCombo === 3 || newCombo === 5 || newCombo === 8 || newCombo % 10 === 0) {
         addPopup(`¡COMBO x${newCombo}!`, 'var(--warning)')
       }
@@ -147,26 +144,28 @@ export default function GamePage() {
   if (result) {
     const b = result.breakdown
     return (
-      <div className="container center" style={{ maxWidth: 520, paddingTop: '8vh' }}>
+      <div className="container center" style={{ maxWidth: 540, paddingTop: '6vh' }}>
         <div className="panel">
-          <h2>Sesión completada — {EXERCISE_NAMES[exerciseType] || exerciseType}</h2>
-          <p style={{ color: 'var(--text-dim)' }}>Puntos ganados</p>
-          <h1 className="mono" style={{ fontSize: 56, color: 'var(--success)' }}>+{result.points}</h1>
+          <h2>Sesión completada</h2>
+          <p style={{ color: 'var(--text-dim)' }}>Ejercicio: {EXERCISE_NAMES[exerciseType] || exerciseType}</p>
+          <h1 className="mono" style={{ fontSize: 56, color: 'var(--success)', marginBottom: 8 }}>+{result.points}</h1>
+          <p style={{ color: 'var(--text-dim)', fontSize: 14 }}>Puntos ganados</p>
 
-          <div style={{ textAlign: 'left', margin: '16px 0' }}>
-            <div className="ranking-row"><span>Aciertos</span><span className="mono" style={{ color: 'var(--success)' }}>{b.correct}</span></div>
-            <div className="ranking-row"><span>Errores</span><span className="mono" style={{ color: 'var(--error)' }}>{b.wrong}</span></div>
+          <div style={{ textAlign: 'left', margin: '24px 0', backgroundColor: 'var(--bg-elevated)', padding: '16px', borderRadius: '8px' }}>
+            <div className="ranking-row"><span>✓ Aciertos</span><span className="mono" style={{ color: 'var(--success)' }}>{b.correct}</span></div>
+            <div className="ranking-row"><span>✗ Errores</span><span className="mono" style={{ color: 'var(--error)' }}>{b.wrong}</span></div>
             <div className="ranking-row"><span>Precisión</span><span className="mono">{Math.round(b.accuracy * 100)}%</span></div>
-            <div className="ranking-row"><span>Mejor racha</span><span className="mono" style={{ color: 'var(--warning)' }}>x{b.max_streak}</span></div>
-            <div className="ranking-row"><span>Base (× nivel {difficulty})</span><span className="mono">+{b.base}</span></div>
-            {b.streak_bonus > 0 && <div className="ranking-row"><span>Bono racha</span><span className="mono" style={{ color: 'var(--warning)' }}>+{b.streak_bonus}</span></div>}
-            {b.speed_bonus > 0 && <div className="ranking-row"><span>Bono velocidad (&lt;600ms)</span><span className="mono" style={{ color: 'var(--accent)' }}>+{b.speed_bonus}</span></div>}
-            {b.fatigue_alerts > 0 && <div className="ranking-row"><span>Fatiga detectada</span><span className="mono" style={{ color: 'var(--error)' }}>−20%</span></div>}
+            <div className="ranking-row"><span>🔥 Mejor racha</span><span className="mono" style={{ color: 'var(--warning)' }}>x{b.max_streak}</span></div>
+            <div className="ranking-row" style={{ paddingTop: '8px', borderTop: '1px solid var(--border)' }}><span><strong>Desglose</strong></span><span></span></div>
+            <div className="ranking-row"><span style={{ fontSize: 13 }}>Base (nivel {difficulty})</span><span className="mono" style={{ fontSize: 13 }}>+{b.base}</span></div>
+            {b.streak_bonus > 0 && <div className="ranking-row"><span style={{ fontSize: 13 }}>Bono racha</span><span className="mono" style={{ color: 'var(--warning)', fontSize: 13 }}>+{b.streak_bonus}</span></div>}
+            {b.speed_bonus > 0 && <div className="ranking-row"><span style={{ fontSize: 13 }}>Bono velocidad (&lt;600ms)</span><span className="mono" style={{ color: 'var(--accent)', fontSize: 13 }}>+{b.speed_bonus}</span></div>}
+            {b.fatigue_alerts > 0 && <div className="ranking-row"><span style={{ fontSize: 13, color: 'var(--error)' }}>⚠ Fatiga (−20%)</span><span className="mono" style={{ color: 'var(--error)', fontSize: 13 }}>−{Math.round(((b.base + (b.streak_bonus || 0) + (b.speed_bonus || 0)) * 0.2))}</span></div>}
           </div>
 
-          <p>Total acumulado: <strong className="mono">{result.total}</strong></p>
-          <div className="mt" style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <button onClick={() => window.location.reload()}>Otra sesión</button>
+          <p style={{ fontSize: 14, marginBottom: '16px' }}>Total acumulado: <strong className="mono" style={{ fontSize: 18 }}>{result.total}</strong></p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <button onClick={() => window.location.reload()}>▶ Otra sesión</button>
             <button className="secondary" onClick={() => navigate('/')}>Dashboard</button>
           </div>
         </div>
@@ -196,7 +195,7 @@ export default function GamePage() {
             <span className={combo >= 3 ? 'combo-hot mono' : 'mono'} style={{ color: combo >= 3 ? 'var(--warning)' : 'var(--text-dim)' }}>
               {combo > 0 ? `COMBO x${combo}` : '—'}
             </span>
-            <span className="score mono">{score} pts</span>
+            <span className="score mono">{hits} aciertos</span>
           </>
         )}
         <button className="secondary" onClick={endSession}>Terminar</button>
